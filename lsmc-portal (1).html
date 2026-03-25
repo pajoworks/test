@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LSMC — Los Santos Medical Center</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,600;0,700;0,800;1,400&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    /* ============================================================
+       VARIABLES & RESET
+    ============================================================ */
+    :root {
+      --navy:       #0c1e30;
+      --navy-mid:   #152d45;
+      --navy-light: #1e3d5a;
+      --red:        #c8102e;
+      --red-dark:   #9e0c24;
+      --red-light:  #e8243e;
+      --sky:        #0070c0;
+      --sky-light:  #e8f3fd;
+      --white:      #ffffff;
+      --off-white:  #f4f7fa;
+      --light:      #e8ecf1;
+      --mid:        #9aaaba;
+      --dark:       #1a2b3a;
+      --text:       #2c3e50;
+      --text-light: #5a7080;
+
+      --shadow-sm: 0 2px 8px rgba(12,30,48,0.10);
+      --shadow-md: 0 4px 20px rgba(12,30,48,0.14);
+      --shadow-lg: 0 8px 40px rgba(12,30,48,0.18);
+      --shadow-red: 0 4px 24px rgba(200,16,46,0.25);
+
+      --font-display: 'Bebas Neue', sans-serif;
+      --font-cond:    'Barlow Condensed', sans-serif;
+      --font-body:    'Barlow', sans-serif;
+
+      --radius: 3px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; min-height: 100%; background: var(--off-white); color: var(--text); font-family: var(--font-body); font-size: 15px; }
+
+    /* ============================================================
+       SCROLLBAR
+    ============================================================ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--light); }
+    ::-webkit-scrollbar-thumb { background: var(--mid); border-radius: 3px; }
+
+    /* ============================================================
+       PAGE SYSTEM
+    ============================================================ */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: flex; }
+
+    /* ============================================================
+       GLOBAL HEADER STRIPE (top status bar)
+    ============================================================ */
+    .top-stripe {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+      height: 36px;
+      background: var(--navy);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 600;
+      letter-spacing: 1.5px; color: rgba(255,255,255,0.55);
+    }
+    .top-stripe .left { display: flex; align-items: center; gap: 24px; }
+    .top-stripe .right { display: flex; align-items: center; gap: 20px; }
+    .stripe-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .dot-green  { background: #22dd66; box-shadow: 0 0 8px #22dd66; animation: blink 2.4s infinite; }
+    .dot-red    { background: var(--red); }
+    .dot-blue   { background: #4db8ff; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ============================================================
+       EKG DECORATION (SVG line)
+    ============================================================ */
+    .ekg-line {
+      position: absolute; left: 0; right: 0; pointer-events: none;
+      overflow: visible;
+    }
+    .ekg-path {
+      stroke: var(--red); stroke-width: 2; fill: none;
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      animation: ekgDraw 2s ease forwards 0.4s;
+    }
+    @keyframes ekgDraw { to { stroke-dashoffset: 0; } }
+
+    /* ============================================================
+       PAGE: LOGIN
+    ============================================================ */
+    #page-login {
+      flex-direction: row;
+      padding-top: 36px;
+    }
+
+    /* Left panel — brand / illustration */
+    .login-left {
+      width: 45%;
+      background: var(--navy);
+      position: relative;
+      display: flex; flex-direction: column;
+      justify-content: center;
+      padding: 60px 56px;
+      overflow: hidden;
+    }
+    @media (max-width: 900px) { .login-left { display: none; } }
+
+    /* Diagonal red stripe */
+    .login-left::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 260px; height: 120%;
+      background: var(--red);
+      transform: rotate(8deg);
+      opacity: 0.08;
+    }
+    /* Stars pattern top-right */
+    .login-left::after {
+      content: '✦ ✦ ✦ ✦ ✦';
+      position: absolute; top: 24px; right: 32px;
+      font-size: 11px; color: rgba(255,255,255,0.15);
+      letter-spacing: 8px;
+    }
+
+    .brand-cross {
+      font-size: 64px; line-height: 1;
+      color: var(--red);
+      margin-bottom: 20px;
+      display: block;
+      text-shadow: 0 0 40px rgba(200,16,46,0.5);
+      animation: crossPulse 3s ease-in-out infinite;
+    }
+    @keyframes crossPulse { 0%,100%{text-shadow:0 0 40px rgba(200,16,46,.5)} 50%{text-shadow:0 0 80px rgba(200,16,46,.9)} }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 68px; line-height: .92;
+      color: var(--white);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    .brand-name span { color: var(--red); }
+
+    .brand-tagline {
+      font-family: var(--font-cond);
+      font-size: 14px; font-weight: 600;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 40px;
+    }
+
+    .brand-divider {
+      width: 60px; height: 3px;
+      background: var(--red);
+      margin-bottom: 32px;
+    }
+
+    .brand-stats { display: flex; gap: 32px; }
+    .brand-stat {}
+    .brand-stat-val {
+      font-family: var(--font-display);
+      font-size: 36px; color: var(--white);
+      line-height: 1;
+    }
+    .brand-stat-label {
+      font-family: var(--font-cond); font-size: 11px; font-weight: 600;
+      letter-spacing: 2px; color: rgba(255,255,255,0.4); text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .brand-footer {
+      position: absolute; bottom: 28px; left: 56px; right: 56px;
+      font-family: var(--font-cond); font-size: 10px; font-weight: 600;
+      letter-spacing: 2px; color: rgba(255,255,255,0.2); text-transform: uppercase;
+      border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;
+    }
+
+    /* Right panel — form */
+    .login-right {
+      flex: 1;
+      background: var(--white);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 60px 48px;
+    }
+    @media (max-width: 600px) { .login-right { padding: 40px 24px; } }
+
+    .login-form-wrap { width: 100%; max-width: 400px; }
+
+    .login-form-header { margin-bottom: 36px; }
+    .login-form-header h2 {
+      font-family: var(--font-display);
+      font-size: 42px; color: var(--navy);
+      letter-spacing: 2px; line-height: 1;
+      margin-bottom: 8px;
+    }
+    .login-form-header p {
+      font-family: var(--font-cond); font-size: 13px; font-weight: 600;
+      letter-spacing: 2px; color: var(--text-light); text-transform: uppercase;
+    }
+    .login-form-header .red-bar {
+      width: 48px; height: 4px; background: var(--red); margin-bottom: 14px;
+    }
+
+    /* Tab switcher */
+    .tab-row {
+      display: flex; border-bottom: 2px solid var(--light); margin-bottom: 28px;
+    }
+    .tab-btn {
+      flex: 1; padding: 12px 8px;
+      background: none; border: none; cursor: pointer;
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--mid); border-bottom: 3px solid transparent;
+      margin-bottom: -2px; transition: all .25s;
+    }
+    .tab-btn.active { color: var(--navy); border-bottom-color: var(--red); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Form elements */
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block; margin-bottom: 6px;
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--text-light);
+    }
+    .form-input {
+      width: 100%; padding: 13px 16px;
+      background: var(--off-white);
+      border: 2px solid var(--light);
+      color: var(--dark); font-family: var(--font-body); font-size: 15px;
+      border-radius: var(--radius);
+      outline: none; transition: all .25s;
+    }
+    .form-input:focus {
+      border-color: var(--sky);
+      background: var(--white);
+      box-shadow: 0 0 0 3px rgba(0,112,192,0.10);
+    }
+    .form-input::placeholder { color: var(--mid); }
+
+    .form-input-icon-wrap { position: relative; }
+    .form-input-icon-wrap .form-input { padding-left: 44px; }
+    .fii-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; color: var(--mid); pointer-events: none;
+    }
+
+    .form-select {
+      width: 100%; padding: 13px 16px;
+      background: var(--off-white); border: 2px solid var(--light);
+      color: var(--dark); font-family: var(--font-body); font-size: 15px;
+      border-radius: var(--radius); outline: none; cursor: pointer; transition: all .25s;
+    }
+    .form-select:focus { border-color: var(--sky); }
+    .form-select option { background: var(--white); }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%; padding: 15px;
+      background: var(--red);
+      border: none; border-radius: var(--radius);
+      color: var(--white);
+      font-family: var(--font-cond); font-size: 16px; font-weight: 800;
+      letter-spacing: 3px; text-transform: uppercase;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: all .25s; box-shadow: var(--shadow-red);
+    }
+    .btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); box-shadow: 0 6px 28px rgba(200,16,46,.35); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .btn-navy {
+      padding: 11px 24px; background: var(--navy); border: none;
+      border-radius: var(--radius); color: var(--white);
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      letter-spacing: 2px; cursor: pointer; transition: all .2s;
+    }
+    .btn-navy:hover { background: var(--navy-light); }
+
+    .btn-outline {
+      padding: 11px 24px; background: transparent;
+      border: 2px solid var(--light); border-radius: var(--radius);
+      color: var(--text-light);
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700;
+      letter-spacing: 2px; cursor: pointer; transition: all .2s;
+    }
+    .btn-outline:hover { border-color: var(--mid); color: var(--text); }
+
+    .btn-danger {
+      padding: 9px 18px; background: transparent;
+      border: 2px solid rgba(200,16,46,.3); border-radius: var(--radius);
+      color: var(--red);
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: 1px; cursor: pointer; transition: all .2s;
+    }
+    .btn-danger:hover { background: rgba(200,16,46,.06); border-color: var(--red); }
+
+    /* Alerts */
+    .alert { padding: 12px 16px; margin-bottom: 18px; border-radius: var(--radius); display: none; font-size: 13px; font-weight: 600; }
+    .alert.show { display: flex; align-items: flex-start; gap: 10px; }
+    .alert-error   { background: #fff0f2; border-left: 4px solid var(--red);  color: var(--red-dark); }
+    .alert-success { background: #f0faf4; border-left: 4px solid #22aa55;     color: #1a7a3f; }
+    .alert-info    { background: var(--sky-light); border-left: 4px solid var(--sky); color: var(--sky); }
+
+    .login-footer {
+      margin-top: 28px; text-align: center;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 600;
+      letter-spacing: 2px; color: var(--mid); text-transform: uppercase;
+    }
+
+    /* ============================================================
+       DASHBOARD
+    ============================================================ */
+    #page-dashboard { flex-direction: column; padding-top: 36px; }
+
+    /* Main navbar */
+    .navbar {
+      position: sticky; top: 36px; z-index: 400;
+      background: var(--white);
+      border-bottom: 1px solid var(--light);
+      box-shadow: var(--shadow-sm);
+      display: flex; align-items: center;
+      height: 64px; padding: 0 32px; gap: 0;
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 12px;
+      margin-right: 40px;
+    }
+    .nav-brand-cross {
+      width: 36px; height: 36px;
+      background: var(--red); border-radius: 2px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 20px; font-weight: 900;
+      flex-shrink: 0;
+    }
+    .nav-brand-text {}
+    .nav-brand-name {
+      font-family: var(--font-display); font-size: 22px;
+      color: var(--navy); letter-spacing: 2px; line-height: 1;
+    }
+    .nav-brand-sub {
+      font-family: var(--font-cond); font-size: 10px; font-weight: 600;
+      letter-spacing: 2px; color: var(--mid); text-transform: uppercase;
+    }
+
+    .nav-links { display: flex; gap: 0; flex: 1; }
+    .nav-link {
+      padding: 0 18px;
+      height: 64px; border: none; background: none; cursor: pointer;
+      font-family: var(--font-cond); font-size: 13px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text-light); border-bottom: 3px solid transparent;
+      transition: all .2s; display: flex; align-items: center; gap: 7px;
+      white-space: nowrap;
+    }
+    .nav-link:hover { color: var(--navy); background: var(--off-white); }
+    .nav-link.active { color: var(--red); border-bottom-color: var(--red); background: rgba(200,16,46,.03); }
+    .nav-link .nav-icon { font-size: 15px; }
+
+    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+    .nav-user { display: flex; align-items: center; gap: 10px; }
+    .nav-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--navy); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .nav-user-info {}
+    .nav-username { font-family: var(--font-cond); font-size: 14px; font-weight: 700; color: var(--navy); letter-spacing: 1px; }
+    .nav-role    { font-family: var(--font-cond); font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--mid); text-transform: uppercase; }
+
+    /* Dashboard body */
+    .dash-body { flex: 1; padding: 32px; max-width: 1400px; width: 100%; margin: 0 auto; }
+
+    /* Subpages */
+    .subpage { display: none; }
+    .subpage.active { display: block; }
+
+    /* Page header */
+    .page-hdr { margin-bottom: 28px; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .page-hdr-left {}
+    .page-hdr-eyebrow { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--red); margin-bottom: 4px; }
+    .page-hdr h1 { font-family: var(--font-display); font-size: 40px; color: var(--navy); letter-spacing: 2px; line-height: 1; }
+    .hdr-bar { width: 40px; height: 4px; background: var(--red); margin-top: 10px; }
+
+    /* ============================================================
+       HOME
+    ============================================================ */
+    .welcome-card {
+      background: var(--navy);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      margin-bottom: 28px;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
+    .welcome-card::before {
+      content: '';
+      position: absolute; top: 0; right: 0; bottom: 0; width: 280px;
+      background: linear-gradient(135deg, transparent 30%, rgba(200,16,46,0.15));
+    }
+    /* Diagonal stripe right edge */
+    .welcome-card::after {
+      content: '';
+      position: absolute; top: -40px; right: 60px;
+      width: 6px; height: 200%;
+      background: var(--red); opacity: 0.3; transform: rotate(12deg);
+    }
+    .welcome-card-left {}
+    .welcome-card h2 {
+      font-family: var(--font-display); font-size: 36px;
+      color: var(--white); letter-spacing: 2px; margin-bottom: 8px;
+    }
+    .welcome-card h2 span { color: var(--red); }
+    .welcome-card p { color: rgba(255,255,255,.55); font-size: 14px; line-height: 1.6; max-width: 500px; }
+    .welcome-badge {
+      flex-shrink: 0; padding: 14px 24px;
+      border: 2px solid rgba(255,255,255,.15); border-radius: var(--radius);
+      text-align: center;
+    }
+    .welcome-badge-val { font-family: var(--font-display); font-size: 28px; color: var(--white); }
+    .welcome-badge-label { font-family: var(--font-cond); font-size: 10px; font-weight: 600; letter-spacing: 2px; color: rgba(255,255,255,.4); text-transform: uppercase; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--white); border: 1px solid var(--light);
+      border-radius: var(--radius); padding: 22px 24px;
+      box-shadow: var(--shadow-sm); transition: all .25s;
+      border-top: 4px solid var(--light);
+    }
+    .stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .stat-card.red-top    { border-top-color: var(--red); }
+    .stat-card.navy-top   { border-top-color: var(--navy); }
+    .stat-card.sky-top    { border-top-color: var(--sky); }
+    .stat-card.green-top  { border-top-color: #22aa55; }
+    .stat-label { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--mid); margin-bottom: 10px; }
+    .stat-value { font-family: var(--font-display); font-size: 38px; color: var(--navy); line-height: 1; }
+    .stat-value.red   { color: var(--red); }
+    .stat-value.sky   { color: var(--sky); }
+    .stat-value.green { color: #22aa55; }
+    .stat-sub { font-size: 12px; color: var(--text-light); margin-top: 6px; }
+
+    /* EKG bar decoration */
+    .ekg-bar {
+      height: 3px; background: var(--light); margin-bottom: 28px;
+      position: relative; overflow: hidden; border-radius: 2px;
+    }
+    .ekg-bar::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 0%, var(--red) 20%, var(--red) 22%, transparent 22%,
+        transparent 30%, var(--red) 38%, var(--red) 40%, transparent 40%,
+        transparent 42%, var(--red) 50%, var(--red) 52%, transparent 52%, transparent 100%);
+      animation: ekgScroll 3s linear infinite;
+    }
+    @keyframes ekgScroll { from{background-position:-400px 0} to{background-position:400px 0} }
+
+    .news-section-title {
+      font-family: var(--font-display); font-size: 24px; color: var(--navy);
+      letter-spacing: 2px; margin-bottom: 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .news-section-title::after { content: ''; flex: 1; height: 2px; background: var(--light); }
+    .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .news-card {
+      background: var(--white); border: 1px solid var(--light);
+      border-radius: var(--radius); padding: 24px;
+      box-shadow: var(--shadow-sm); transition: all .25s;
+    }
+    .news-card:hover { box-shadow: var(--shadow-md); }
+    .news-tag {
+      display: inline-block; padding: 3px 10px; margin-bottom: 12px;
+      font-family: var(--font-cond); font-size: 10px; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase; border-radius: 2px;
+    }
+    .tag-red   { background: rgba(200,16,46,.1);  color: var(--red);  }
+    .tag-navy  { background: rgba(12,30,48,.08);  color: var(--navy); }
+    .tag-sky   { background: var(--sky-light);    color: var(--sky);  }
+    .tag-green { background: rgba(34,170,85,.1);  color: #22aa55;     }
+    .news-card h3 { font-family: var(--font-cond); font-size: 17px; font-weight: 700; color: var(--navy); margin-bottom: 8px; letter-spacing: .5px; }
+    .news-card p  { font-size: 13px; color: var(--text-light); line-height: 1.65; }
+    .news-date { font-family: var(--font-cond); font-size: 10px; color: var(--mid); margin-top: 14px; font-weight: 600; letter-spacing: 1px; }
+
+    /* ============================================================
+       PROFILE
+    ============================================================ */
+    .profile-grid { display: grid; grid-template-columns: 300px 1fr; gap: 24px; }
+    @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
+
+    .profile-id-card {
+      background: var(--white); border: 1px solid var(--light);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .profile-id-header {
+      background: var(--navy); padding: 24px;
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      position: relative;
+    }
+    .profile-id-header::after {
+      content: 'LOS SANTOS MEDICAL CENTER';
+      position: absolute; bottom: 8px; left: 0; right: 0; text-align: center;
+      font-family: var(--font-cond); font-size: 8px; font-weight: 700;
+      letter-spacing: 2px; color: rgba(255,255,255,.2);
+    }
+    .profile-avatar {
+      width: 80px; height: 80px; border-radius: 50%;
+      border: 4px solid var(--red);
+      background: var(--navy-light); color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 32px;
+      box-shadow: 0 0 0 6px rgba(255,255,255,.08);
+    }
+    .profile-name { font-family: var(--font-display); font-size: 22px; color: var(--white); letter-spacing: 2px; text-align: center; }
+    .profile-role-chip {
+      padding: 5px 16px; border-radius: 20px;
+      font-family: var(--font-cond); font-size: 11px; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    .chip-membre     { background: rgba(0,112,192,.2); color: #4db8ff; }
+    .chip-moderateur { background: rgba(255,140,0,.2); color: #ff8c00; }
+    .chip-admin      { background: rgba(200,16,46,.2); color: var(--red-light); }
+
+    .profile-id-body { padding: 20px; }
+    .profile-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 0; border-bottom: 1px solid var(--light);
+    }
+    .profile-row:last-child { border-bottom: none; }
+    .pr-label { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--mid); }
+    .pr-value { font-family: var(--font-body); font-size: 13px; font-weight: 600; color: var(--dark); text-align: right; max-width: 160px; word-break: break-word; }
+
+    .profile-edit-panel {
+      background: var(--white); border: 1px solid var(--light);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 28px;
+    }
+    .panel-title {
+      font-family: var(--font-display); font-size: 22px; color: var(--navy);
+      letter-spacing: 2px; margin-bottom: 20px;
+      padding-bottom: 14px; border-bottom: 2px solid var(--light);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .panel-title::before { content: ''; width: 4px; height: 22px; background: var(--red); display: inline-block; }
+
+    /* ============================================================
+       MEMBERS
+    ============================================================ */
+    .members-toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .search-wrap { flex: 1; min-width: 220px; position: relative; }
+    .search-wrap input {
+      width: 100%; padding: 11px 16px 11px 42px;
+      background: var(--white); border: 2px solid var(--light);
+      border-radius: var(--radius); color: var(--dark);
+      font-family: var(--font-body); font-size: 14px;
+      outline: none; transition: all .2s;
+    }
+    .search-wrap input:focus { border-color: var(--sky); }
+    .search-wrap .si { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--mid); }
+    .filter-pill {
+      padding: 9px 16px; border-radius: 20px;
+      background: var(--white); border: 2px solid var(--light);
+      font-family: var(--font-cond); font-size: 12px; font-weight: 700;
+      letter-spacing: 1.5px; cursor: pointer; transition: all .2s; color: var(--text-light);
+    }
+    .filter-pill:hover, .filter-pill.active { border-color: var(--navy); color: var(--navy); background: rgba(12,30,48,.04); }
+
+    .members-table-wrap { background: var(--white); border: 1px solid var(--light); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .members-table { width: 100%; border-collapse: collapse; }
+    .members-table thead tr { background: var(--navy); }
+    .members-table th { padding: 13px 18px; text-align: left; font-family: var(--font-cond); font-size: 10px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,.55); }
+    .members-table th:first-child { color: rgba(255,255,255,.7); }
+    .members-table td { padding: 16px 18px; border-bottom: 1px solid var(--light); vertical-align: middle; }
+    .members-table tr:last-child td { border-bottom: none; }
+    .members-table tr:hover td { background: var(--off-white); }
+    .member-avatar-sm {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--navy); color: var(--white);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 16px;
+      margin-right: 12px; flex-shrink: 0;
+    }
+    .member-username { font-weight: 700; color: var(--navy); font-size: 14px; }
+    .member-ic { font-size: 12px; color: var(--text-light); }
+    .role-chip {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-family: var(--font-cond); font-size: 10px; font-weight: 800;
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+
+    /* ============================================================
+       RÈGLEMENT
+    ============================================================ */
+    .rules-wrap { max-width: 820px; }
+    .rule-card {
+      background: var(--white); border: 1px solid var(--light);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm);
+      margin-bottom: 12px; overflow: hidden;
+    }
+    .rule-header {
+      padding: 18px 22px; display: flex; align-items: center; gap: 16px;
+      cursor: pointer; user-select: none;
+      transition: background .2s;
+    }
+    .rule-header:hover { background: var(--off-white); }
+    .rule-num {
+      width: 40px; height: 40px; background: var(--navy); border-radius: 2px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display); font-size: 18px; color: var(--white); flex-shrink: 0;
+    }
+    .rule-card.open .rule-num { background: var(--red); }
+    .rule-title { font-family: var(--font-cond); font-size: 17px; font-weight: 700; color: var(--navy); flex: 1; letter-spacing: .5px; }
+    .rule-arrow { color: var(--mid); font-size: 14px; transition: transform .3s; }
+    .rule-card.open .rule-arrow { transform: rotate(90deg); color: var(--red); }
+    .rule-body { display: none; padding: 0 22px 22px 78px; }
+    .rule-card.open .rule-body { display: block; }
+    .rule-body p { font-size: 14px; color: var(--text-light); line-height: 1.75; margin-bottom: 10px; }
+    .rule-body ul { padding-left: 18px; }
+    .rule-body li { font-size: 14px; color: var(--text-light); line-height: 1.75; }
+    .rule-body li::marker { color: var(--red); }
+
+    /* ============================================================
+       ADMIN
+    ============================================================ */
+    .admin-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .admin-kpi {
+      background: var(--white); border: 1px solid var(--light); border-radius: var(--radius);
+      padding: 22px 24px; box-shadow: var(--shadow-sm);
+      border-left: 5px solid var(--light); transition: all .25s; cursor: default;
+    }
+    .admin-kpi.red-l  { border-left-color: var(--red); }
+    .admin-kpi.navy-l { border-left-color: var(--navy); }
+    .admin-kpi.sky-l  { border-left-color: var(--sky); }
+    .admin-kpi:hover  { box-shadow: var(--shadow-md); }
+    .kpi-icon { font-size: 26px; margin-bottom: 12px; }
+    .kpi-val  { font-family: var(--font-display); font-size: 32px; color: var(--navy); line-height: 1; margin-bottom: 4px; }
+    .kpi-label { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--mid); }
+    .kpi-sub   { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+    .admin-panel {
+      background: var(--white); border: 1px solid var(--light);
+      border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .admin-panel-header {
+      padding: 18px 24px; background: var(--off-white);
+      border-bottom: 1px solid var(--light);
+      font-family: var(--font-display); font-size: 20px; color: var(--navy); letter-spacing: 2px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .admin-panel-header::before { content: ''; width: 4px; height: 20px; background: var(--red); display: inline-block; }
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th { padding: 11px 16px; font-family: var(--font-cond); font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--mid); border-bottom: 2px solid var(--light); text-align: left; }
+    .admin-table td { padding: 14px 16px; border-bottom: 1px solid var(--light); vertical-align: middle; font-size: 13px; }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--off-white); }
+
+    /* ============================================================
+       MODAL
+    ============================================================ */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 3000;
+      background: rgba(12,30,48,.5); align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow-lg); width: 90%; max-width: 480px; overflow: hidden;
+    }
+    .modal-header {
+      padding: 20px 24px; background: var(--navy);
+      font-family: var(--font-display); font-size: 22px; color: var(--white); letter-spacing: 2px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .modal-header.danger { background: var(--red); }
+    .modal-body { padding: 24px; }
+    .modal-footer { padding: 16px 24px; background: var(--off-white); border-top: 1px solid var(--light); display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ============================================================
+       TOAST
+    ============================================================ */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px; z-index: 9000;
+      background: var(--navy); color: var(--white);
+      padding: 14px 22px; border-radius: var(--radius);
+      font-family: var(--font-cond); font-size: 14px; font-weight: 700; letter-spacing: 1px;
+      box-shadow: var(--shadow-lg);
+      transform: translateY(120%); opacity: 0; transition: all .35s cubic-bezier(.34,1.56,.64,1);
+      display: flex; align-items: center; gap: 10px;
+      border-left: 5px solid #22aa55;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.err  { border-left-color: var(--red); }
+
+    /* ============================================================
+       UTILITIES
+    ============================================================ */
+    .flex { display: flex; }
+    .items-center { align-items: center; }
+    .gap-8  { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .mb-0  { margin-bottom: 0; }
+    .mb-16 { margin-bottom: 16px; }
+    .mb-24 { margin-bottom: 24px; }
+    .text-red   { color: var(--red); }
+    .text-navy  { color: var(--navy); }
+    .text-sky   { color: var(--sky); }
+    .text-light { color: var(--text-light); }
+    .font-cond  { font-family: var(--font-cond); }
+    .font-disp  { font-family: var(--font-display); }
+    .bold { font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- Top status stripe -->
+<div class="top-stripe">
+  <div class="left">
+    <span><span class="stripe-dot dot-green"></span>SYSTEM ONLINE</span>
+    <span>LSMC NETWORK</span>
+    <span>SECURE ACCESS PORTAL v3.0</span>
+  </div>
+  <div class="right">
+    <span><span class="stripe-dot dot-blue"></span>ENCRYPTED</span>
+    <span id="sb-time">--:--:--</span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ============================================================
+     PAGE: LOGIN
+============================================================ -->
+<div class="page active" id="page-login">
+
+  <!-- Left branding panel -->
+  <div class="login-left">
+    <span class="brand-cross">✚</span>
+    <div class="brand-name">LOS<br>SANTOS<br><span>MEDICAL</span></div>
+    <div class="brand-tagline">Staff Portal — Secure Access</div>
+    <div class="brand-divider"></div>
+    <div class="brand-stats">
+      <div class="brand-stat">
+        <div class="brand-stat-val" id="bs-members">—</div>
+        <div class="brand-stat-label">Staff Members</div>
+      </div>
+      <div class="brand-stat">
+        <div class="brand-stat-val">8</div>
+        <div class="brand-stat-label">Departments</div>
+      </div>
+      <div class="brand-stat">
+        <div class="brand-stat-val">24/7</div>
+        <div class="brand-stat-label">Operations</div>
+      </div>
+    </div>
+    <div class="brand-footer">
+      LOS SANTOS MEDICAL CENTER // LS COUNTY HEALTH SYSTEM // RESTRICTED
+    </div>
+  </div>
+
+  <!-- Right form panel -->
+  <div class="login-right">
+    <div class="login-form-wrap">
+
+      <div class="login-form-header">
+        <div class="red-bar"></div>
+        <h2>STAFF<br>ACCESS</h2>
+        <p>Los Santos Medical Center — Secure Portal</p>
+      </div>
+
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <!-- SIGN IN -->
+      <div class="tab-content active" id="tab-login">
+        <div class="alert alert-error" id="login-error"></div>
+        <div class="form-group">
+          <label class="form-label">Employee ID / Username</label>
+          <div class="form-input-icon-wrap">
+            <span class="fii-icon">👤</span>
+            <input type="text" class="form-input" id="login-username" placeholder="your.username" autocomplete="off"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="form-input-icon-wrap">
+            <span class="fii-icon">🔒</span>
+            <input type="password" class="form-input" id="login-password" placeholder="••••••••"/>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="handleLogin()">SIGN IN →</button>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="tab-content" id="tab-register">
+        <div class="alert alert-error"   id="reg-error"></div>
+        <div class="alert alert-success" id="reg-success"></div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Username</label>
+            <input type="text" class="form-input" id="reg-username" placeholder="john_doe"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Character Name</label>
+            <input type="text" class="form-input" id="reg-ic" placeholder="John Doe"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="reg-password" placeholder="min. 6 chars"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password</label>
+            <input type="password" class="form-input" id="reg-password2" placeholder="••••••••"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department / Service</label>
+          <select class="form-select" id="reg-faction">
+            <option value="">-- Select Department --</option>
+            <option>Emergency Medicine — ER</option>
+            <option>Trauma Surgery</option>
+            <option>Paramedic — EMS</option>
+            <option>Nursing Staff</option>
+            <option>Medical Examiner</option>
+            <option>Administration</option>
+            <option>Security — LSMC</option>
+            <option>Intern / Resident</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Discord ID</label>
+          <input type="text" class="form-input" id="reg-discord" placeholder="username#0000"/>
+        </div>
+        <button class="btn-primary" onclick="handleRegister()">CREATE ACCOUNT →</button>
+      </div>
+
+      <div class="login-footer">
+        Los Santos Medical Center // All rights reserved // 2025
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PAGE: DASHBOARD
+============================================================ -->
+<div class="page" id="page-dashboard">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="nav-brand-cross">✚</div>
+      <div class="nav-brand-text">
+        <div class="nav-brand-name">LSMC</div>
+        <div class="nav-brand-sub">Staff Portal</div>
+      </div>
+    </div>
+    <div class="nav-links">
+      <button class="nav-link active" onclick="navTo('home',this)"><span class="nav-icon">🏠</span>Home</button>
+      <button class="nav-link" onclick="navTo('profil',this)"><span class="nav-icon">👤</span>My Profile</button>
+      <button class="nav-link" onclick="navTo('membres',this)"><span class="nav-icon">👥</span>Staff Directory</button>
+      <button class="nav-link" onclick="navTo('reglement',this)"><span class="nav-icon">📋</span>Policies</button>
+      <button class="nav-link" id="admin-nav-btn" onclick="navTo('admin',this)" style="display:none"><span class="nav-icon">⚙️</span>Admin</button>
+    </div>
+    <div class="nav-right">
+      <div class="nav-user">
+        <div class="nav-avatar" id="nav-avatar">?</div>
+        <div class="nav-user-info">
+          <div class="nav-username" id="nav-username">---</div>
+          <div class="nav-role" id="nav-role">---</div>
+        </div>
+      </div>
+      <button class="btn-danger" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="dash-body">
+
+    <!-- ▌ HOME -->
+    <div class="subpage active" id="sub-home">
+      <div class="welcome-card">
+        <div class="welcome-card-left">
+          <h2>WELCOME BACK, <span id="welcome-name">---</span></h2>
+          <p id="welcome-msg">You're logged into the Los Santos Medical Center Staff Portal. Access your profile, browse the staff directory, or review departmental policies.</p>
+        </div>
+        <div class="welcome-badge">
+          <div class="welcome-badge-val" id="wb-dept">---</div>
+          <div class="welcome-badge-label">Your Department</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card red-top">
+          <div class="stat-label">Total Staff</div>
+          <div class="stat-value red" id="stat-total">0</div>
+          <div class="stat-sub">registered members</div>
+        </div>
+        <div class="stat-card navy-top">
+          <div class="stat-label">Departments</div>
+          <div class="stat-value">8</div>
+          <div class="stat-sub">active services</div>
+        </div>
+        <div class="stat-card sky-top">
+          <div class="stat-label">Your Role</div>
+          <div class="stat-value sky" id="stat-role" style="font-size:24px;margin-top:6px">---</div>
+          <div class="stat-sub">access level</div>
+        </div>
+        <div class="stat-card green-top">
+          <div class="stat-label">Status</div>
+          <div class="stat-value green" style="font-size:24px;margin-top:6px">● ACTIVE</div>
+          <div class="stat-sub">session online</div>
+        </div>
+      </div>
+
+      <div class="ekg-bar"></div>
+
+      <div class="news-section-title">Latest Bulletins</div>
+      <div class="news-grid">
+        <div class="news-card">
+          <span class="news-tag tag-red">⚠ URGENT</span>
+          <h3>Mass Casualty Protocol Update</h3>
+          <p>New MCI triage procedures are in effect as of this week. All ER staff must review the updated red-yellow-green protocol before next shift.</p>
+          <div class="news-date">📅 JAN 15, 2025 — CHIEF MEDICAL OFFICER</div>
+        </div>
+        <div class="news-card">
+          <span class="news-tag tag-sky">RECRUITMENT</span>
+          <h3>EMS Department Hiring</h3>
+          <p>The Emergency Medical Services division is actively recruiting paramedics. Applications open on Discord — see #recruitment for details.</p>
+          <div class="news-date">📅 JAN 10, 2025 — HR DEPARTMENT</div>
+        </div>
+        <div class="news-card">
+          <span class="news-tag tag-green">TRAINING</span>
+          <h3>Advanced Trauma Life Support</h3>
+          <p>ATLS certification sessions scheduled for all surgical residents. Mandatory attendance — sign up via the staff calendar on Discord.</p>
+          <div class="news-date">📅 JAN 08, 2025 — EDUCATION DEPT.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▌ PROFIL -->
+    <div class="subpage" id="sub-profil">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <div class="page-hdr-eyebrow">Staff Portal</div>
+          <h1>MY PROFILE</h1>
+          <div class="hdr-bar"></div>
+        </div>
+      </div>
+      <div class="profile-grid">
+        <!-- ID Card -->
+        <div class="profile-id-card">
+          <div class="profile-id-header">
+            <div class="profile-avatar" id="prof-avatar">?</div>
+            <div class="profile-name" id="prof-name">---</div>
+            <span class="profile-role-chip" id="prof-role-chip">---</span>
+          </div>
+          <div class="profile-id-body">
+            <div class="profile-row"><span class="pr-label">Employee ID</span><span class="pr-value" id="pr-id">---</span></div>
+            <div class="profile-row"><span class="pr-label">Character</span><span class="pr-value" id="pr-ic">---</span></div>
+            <div class="profile-row"><span class="pr-label">Department</span><span class="pr-value" id="pr-dept">---</span></div>
+            <div class="profile-row"><span class="pr-label">Discord</span><span class="pr-value" id="pr-discord">---</span></div>
+            <div class="profile-row"><span class="pr-label">Joined</span><span class="pr-value" id="pr-date">---</span></div>
+          </div>
+        </div>
+        <!-- Edit form -->
+        <div class="profile-edit-panel">
+          <div class="panel-title">Edit Profile</div>
+          <div class="alert alert-success" id="prof-success"></div>
+          <div class="alert alert-error"   id="prof-error"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Character Name (IC)</label>
+              <input type="text" class="form-input" id="edit-ic"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <select class="form-select" id="edit-faction">
+                <option>Emergency Medicine — ER</option>
+                <option>Trauma Surgery</option>
+                <option>Paramedic — EMS</option>
+                <option>Nursing Staff</option>
+                <option>Medical Examiner</option>
+                <option>Administration</option>
+                <option>Security — LSMC</option>
+                <option>Intern / Resident</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Discord ID</label>
+            <input type="text" class="form-input" id="edit-discord"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Personal Note / Bio</label>
+            <textarea class="form-input" id="edit-bio" rows="3" style="resize:vertical;padding-top:12px"></textarea>
+          </div>
+          <button class="btn-primary" onclick="saveProfile()" style="width:auto;padding:13px 36px">SAVE CHANGES →</button>
+
+          <div class="panel-title" style="margin-top:32px">Change Password</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Current Password</label>
+              <input type="password" class="form-input" id="old-pw"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-input" id="new-pw"/>
+            </div>
+          </div>
+          <button class="btn-navy" onclick="changePassword()" style="padding:13px 28px">UPDATE PASSWORD</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▌ MEMBRES -->
+    <div class="subpage" id="sub-membres">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <div class="page-hdr-eyebrow">Los Santos Medical Center</div>
+          <h1>STAFF DIRECTORY</h1>
+          <div class="hdr-bar"></div>
+        </div>
+      </div>
+      <div class="members-toolbar">
+        <div class="search-wrap">
+          <span class="si">🔍</span>
+          <input type="text" placeholder="Search staff..." id="members-search" oninput="renderMembers()"/>
+        </div>
+        <button class="filter-pill active" onclick="setFactionFilter('',this)">All Staff</button>
+        <button class="filter-pill" onclick="setFactionFilter('Emergency',this)">ER</button>
+        <button class="filter-pill" onclick="setFactionFilter('Paramedic',this)">EMS</button>
+        <button class="filter-pill" onclick="setFactionFilter('Surgery',this)">Surgery</button>
+        <button class="filter-pill" onclick="setFactionFilter('Nursing',this)">Nursing</button>
+      </div>
+      <div class="members-table-wrap">
+        <table class="members-table">
+          <thead>
+            <tr>
+              <th>Staff Member</th>
+              <th>Character</th>
+              <th>Department</th>
+              <th>Role</th>
+              <th>Discord</th>
+              <th>Since</th>
+            </tr>
+          </thead>
+          <tbody id="members-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ▌ RÈGLEMENT -->
+    <div class="subpage" id="sub-reglement">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <div class="page-hdr-eyebrow">LSMC Official Documentation</div>
+          <h1>POLICIES & CONDUCT</h1>
+          <div class="hdr-bar"></div>
+        </div>
+      </div>
+      <div class="rules-wrap">
+
+        <div class="rule-card" onclick="toggleRule(this)">
+          <div class="rule-header">
+            <div class="rule-num">01</div>
+            <div class="rule-title">Professional Conduct & Respect</div>
+            <span class="rule-arrow">▶</span>
+          </div>
+          <div class="rule-body">
+            <p>All staff are expected to maintain professional conduct both in-game and out-of-game at all times.</p>
+            <ul>
+              <li>Respect is mandatory toward all members, patients, and visitors.</li>
+              <li>Harassment, discrimination, or verbal abuse will not be tolerated.</li>
+              <li>Conflicts must be resolved through official channels (Discord tickets).</li>
+              <li>Off-duty conduct reflects on the LSMC — act accordingly.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-card" onclick="toggleRule(this)">
+          <div class="rule-header">
+            <div class="rule-num">02</div>
+            <div class="rule-title">Roleplay Standards (RP)</div>
+            <span class="rule-arrow">▶</span>
+          </div>
+          <div class="rule-body">
+            <p>All interactions must remain immersive and coherent within the GTA RP framework.</p>
+            <ul>
+              <li>No Power Gaming — forced unrealistic actions are prohibited.</li>
+              <li>No Meta Gaming — never use out-of-character information in-character.</li>
+              <li>Fear RP applies at all times — your character values their life.</li>
+              <li>Medical staff must prioritize patient care over personal engagements.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-card" onclick="toggleRule(this)">
+          <div class="rule-header">
+            <div class="rule-num">03</div>
+            <div class="rule-title">Medical Operations & Protocol</div>
+            <span class="rule-arrow">▶</span>
+          </div>
+          <div class="rule-body">
+            <p>LSMC operates under standardized medical RP protocols to ensure quality and consistency.</p>
+            <ul>
+              <li>All patient interactions must follow triage priority (critical → stable).</li>
+              <li>Hospital grounds are safe zones — no violent engagements on hospital property.</li>
+              <li>EMS may operate in combat zones only with law enforcement escort.</li>
+              <li>Document significant medical events in the shift report channel.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-card" onclick="toggleRule(this)">
+          <div class="rule-header">
+            <div class="rule-num">04</div>
+            <div class="rule-title">Equipment & Uniform Policy</div>
+            <span class="rule-arrow">▶</span>
+          </div>
+          <div class="rule-body">
+            <p>Proper identification and uniform must be worn during all active duty shifts.</p>
+            <ul>
+              <li>LSMC-issued uniforms must be worn while on active duty.</li>
+              <li>Department vehicles are for official use only — no personal use.</li>
+              <li>Medical equipment must be returned to the inventory after each shift.</li>
+              <li>Staff ID badges must be visible at all times within hospital grounds.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="rule-card" onclick="toggleRule(this)">
+          <div class="rule-header">
+            <div class="rule-num">05</div>
+            <div class="rule-title">Disciplinary Procedures</div>
+            <span class="rule-arrow">▶</span>
+          </div>
+          <div class="rule-body">
+            <p>Violations of LSMC policy are subject to progressive disciplinary action.</p>
+            <ul>
+              <li><strong>1st offense</strong>: Written warning issued by a supervisor.</li>
+              <li><strong>2nd offense</strong>: Temporary suspension (24h – 72h).</li>
+              <li><strong>3rd offense</strong>: Permanent termination from LSMC roster.</li>
+              <li>Severe violations (cheating, doxxing, RDM) result in immediate removal.</li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ▌ ADMIN -->
+    <div class="subpage" id="sub-admin">
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <div class="page-hdr-eyebrow">Restricted Access</div>
+          <h1>ADMINISTRATION</h1>
+          <div class="hdr-bar"></div>
+        </div>
+      </div>
+
+      <div class="admin-kpi-grid">
+        <div class="admin-kpi red-l">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-val" id="kpi-total">0</div>
+          <div class="kpi-label">Total Staff</div>
+          <div class="kpi-sub">registered accounts</div>
+        </div>
+        <div class="admin-kpi navy-l">
+          <div class="kpi-icon">🏥</div>
+          <div class="kpi-val">8</div>
+          <div class="kpi-label">Departments</div>
+          <div class="kpi-sub">active services</div>
+        </div>
+        <div class="admin-kpi sky-l">
+          <div class="kpi-icon">🔐</div>
+          <div class="kpi-val">TLS</div>
+          <div class="kpi-label">Security</div>
+          <div class="kpi-sub">encrypted local storage</div>
+        </div>
+      </div>
+
+      <div class="admin-panel">
+        <div class="admin-panel-header">Account Management</div>
+        <div style="overflow-x:auto">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Character</th>
+                <th>Department</th>
+                <th>Role</th>
+                <th>Discord</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dash-body -->
+</div>
+
+<!-- ============================================================
+     MODALS
+============================================================ -->
+<div class="modal-overlay" id="modal-role">
+  <div class="modal">
+    <div class="modal-header">✚ Change Staff Role</div>
+    <div class="modal-body">
+      <input type="hidden" id="modal-role-username"/>
+      <div class="form-group">
+        <label class="form-label">Select New Role</label>
+        <select class="form-select" id="modal-role-select">
+          <option value="membre">Staff Member</option>
+          <option value="moderateur">Supervisor</option>
+          <option value="admin">Administrator</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-role')">Cancel</button>
+      <button class="btn-navy" onclick="applyRole()">Apply Change</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <div class="modal-header danger">⚠ Terminate Account</div>
+    <div class="modal-body">
+      <input type="hidden" id="modal-del-username"/>
+      <p style="color:var(--text-light);margin-bottom:10px">You are about to permanently delete the account:</p>
+      <p style="font-family:var(--font-cond);font-size:18px;font-weight:700;color:var(--red)" id="modal-del-name-display"></p>
+      <p style="color:var(--text-light);font-size:13px;margin-top:12px">This action is irreversible.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('modal-delete')">Cancel</button>
+      <button class="btn-danger" onclick="confirmDelete()">Terminate Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+/* ==============================
+   DATABASE (localStorage)
+============================== */
+const DB = {
+  getUsers() { return JSON.parse(localStorage.getItem('lsmc_users') || '[]'); },
+  saveUsers(u) { localStorage.setItem('lsmc_users', JSON.stringify(u)); },
+  getByUsername(name) { return this.getUsers().find(u => u.username.toLowerCase() === name.toLowerCase()); },
+  create(data) {
+    const users = this.getUsers();
+    const u = {
+      id:        'EMP' + Date.now().toString(36).toUpperCase(),
+      username:  data.username,
+      password:  btoa(data.password),
+      ic:        data.ic || '',
+      faction:   data.faction || 'Intern / Resident',
+      discord:   data.discord || '',
+      role:      'membre',
+      bio:       '',
+      createdAt: new Date().toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})
+    };
+    users.push(u);
+    this.saveUsers(users);
+    return u;
+  },
+  update(username, updates) {
+    const users = this.getUsers();
+    const i = users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
+    if (i === -1) return false;
+    users[i] = { ...users[i], ...updates };
+    this.saveUsers(users);
+    return users[i];
+  },
+  delete(username) {
+    this.saveUsers(this.getUsers().filter(u => u.username.toLowerCase() !== username.toLowerCase()));
+  },
+  getSession()     { return JSON.parse(sessionStorage.getItem('lsmc_session') || 'null'); },
+  setSession(u)    { sessionStorage.setItem('lsmc_session', JSON.stringify(u)); },
+  clearSession()   { sessionStorage.removeItem('lsmc_session'); },
+  init() {
+    if (!this.getByUsername('admin')) {
+      this.create({ username:'admin', password:'Admin@123', ic:'Chief Administrator', faction:'Administration', discord:'admin#0001' });
+      this.update('admin', { role:'admin' });
+    }
+    // Update login page member count
+    document.getElementById('bs-members').textContent = this.getUsers().length;
+  }
+};
+
+DB.init();
+
+let currentUser = DB.getSession();
+let factionFilter = '';
+
+if (currentUser) showDashboard();
+
+/* ==============================
+   CLOCK
+============================== */
+setInterval(() => {
+  document.getElementById('sb-time').textContent =
+    new Date().toLocaleTimeString('en-US', { hour12: false });
+}, 1000);
+
+/* ==============================
+   PAGES
+============================== */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showDashboard() {
+  currentUser = DB.getSession() || currentUser;
+  if (!currentUser) return;
+  showPage('page-dashboard');
+  document.getElementById('nav-username').textContent = currentUser.username;
+  document.getElementById('nav-role').textContent     = currentUser.role.toUpperCase();
+  document.getElementById('nav-avatar').textContent   = currentUser.username[0].toUpperCase();
+  document.getElementById('admin-nav-btn').style.display = currentUser.role === 'admin' ? '' : 'none';
+  refreshStats();
+  loadProfile();
+}
+
+function navTo(section, btn) {
+  document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.subpage').forEach(s => s.classList.remove('active'));
+  document.getElementById('sub-' + section).classList.add('active');
+  if (section === 'membres') renderMembers();
+  if (section === 'admin')   renderAdminUsers();
+}
+
+/* ==============================
+   AUTH
+============================== */
+function handleLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  const err = document.getElementById('login-error');
+  clearAlert(err);
+  if (!username || !password) return showAlert(err, '⚠ Please fill in all fields.', 'error');
+  const u = DB.getByUsername(username);
+  if (!u || atob(u.password) !== password) return showAlert(err, '✕ Incorrect credentials — access denied.', 'error');
+  DB.setSession(u);
+  currentUser = u;
+  showDashboard();
+  showToast('✔ Welcome back, ' + u.username + '!');
+}
+
+function handleRegister() {
+  const username  = document.getElementById('reg-username').value.trim();
+  const ic        = document.getElementById('reg-ic').value.trim();
+  const password  = document.getElementById('reg-password').value;
+  const password2 = document.getElementById('reg-password2').value;
+  const faction   = document.getElementById('reg-faction').value;
+  const discord   = document.getElementById('reg-discord').value.trim();
+  const err = document.getElementById('reg-error');
+  const suc = document.getElementById('reg-success');
+  clearAlert(err); clearAlert(suc);
+  if (!username || !password || !faction) return showAlert(err, '⚠ Username, password and department are required.', 'error');
+  if (username.length < 3) return showAlert(err, '⚠ Username must be at least 3 characters.', 'error');
+  if (password !== password2) return showAlert(err, '✕ Passwords do not match.', 'error');
+  if (password.length < 6) return showAlert(err, '⚠ Password must be at least 6 characters.', 'error');
+  if (DB.getByUsername(username)) return showAlert(err, '✕ This username is already taken.', 'error');
+  DB.create({ username, ic, password, faction, discord });
+  document.getElementById('bs-members').textContent = DB.getUsers().length;
+  showAlert(suc, '✔ Account created! You can now sign in.', 'success');
+  ['reg-username','reg-ic','reg-password','reg-password2','reg-discord'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('reg-faction').selectedIndex = 0;
+}
+
+function handleLogout() {
+  DB.clearSession(); currentUser = null;
+  showPage('page-login');
+  showToast('Signed out successfully.', false);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('page-login').classList.contains('active')) handleLogin();
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if ((tab === 'login' && b.textContent === 'Sign In') || (tab === 'register' && b.textContent === 'Register'))
+      b.classList.add('active');
+  });
+}
+
+/* ==============================
+   STATS
+============================== */
+function refreshStats() {
+  currentUser = DB.getByUsername(currentUser.username);
+  DB.setSession(currentUser);
+  const users = DB.getUsers();
+  document.getElementById('stat-total').textContent = users.length;
+  document.getElementById('stat-role').textContent  = currentUser.role.toUpperCase();
+  document.getElementById('welcome-name').textContent = currentUser.username.toUpperCase();
+  document.getElementById('wb-dept').textContent    = (currentUser.faction || '').split('—')[0].trim() || '—';
+  document.getElementById('kpi-total').textContent  = users.length;
+  document.getElementById('bs-members').textContent = users.length;
+}
+
+/* ==============================
+   PROFILE
+============================== */
+function loadProfile() {
+  const u = DB.getByUsername(currentUser.username);
+  if (!u) return;
+  document.getElementById('prof-avatar').textContent = u.username[0].toUpperCase();
+  document.getElementById('prof-name').textContent   = u.username.toUpperCase();
+  document.getElementById('pr-id').textContent       = u.id;
+  document.getElementById('pr-ic').textContent       = u.ic      || '—';
+  document.getElementById('pr-dept').textContent     = u.faction || '—';
+  document.getElementById('pr-discord').textContent  = u.discord || '—';
+  document.getElementById('pr-date').textContent     = u.createdAt || '—';
+
+  const chip = document.getElementById('prof-role-chip');
+  chip.textContent  = u.role === 'admin' ? 'Administrator' : u.role === 'moderateur' ? 'Supervisor' : 'Staff Member';
+  chip.className    = 'profile-role-chip ' +
+    (u.role === 'admin' ? 'chip-admin' : u.role === 'moderateur' ? 'chip-moderateur' : 'chip-membre');
+
+  document.getElementById('edit-ic').value      = u.ic      || '';
+  document.getElementById('edit-discord').value = u.discord || '';
+  document.getElementById('edit-bio').value     = u.bio     || '';
+  const sel = document.getElementById('edit-faction');
+  for (let i = 0; i < sel.options.length; i++)
+    if (sel.options[i].text === u.faction || sel.options[i].value === u.faction) { sel.selectedIndex = i; break; }
+}
+
+function saveProfile() {
+  const ic = document.getElementById('edit-ic').value.trim();
+  const faction = document.getElementById('edit-faction').value;
+  const discord = document.getElementById('edit-discord').value.trim();
+  const bio = document.getElementById('edit-bio').value;
+  DB.update(currentUser.username, { ic, faction, discord, bio });
+  currentUser = DB.getByUsername(currentUser.username);
+  DB.setSession(currentUser);
+  loadProfile(); refreshStats();
+  showAlert(document.getElementById('prof-success'), '✔ Profile updated successfully.', 'success');
+  showToast('✔ Profile saved.');
+}
+
+function changePassword() {
+  const oldPw = document.getElementById('old-pw').value;
+  const newPw = document.getElementById('new-pw').value;
+  const u = DB.getByUsername(currentUser.username);
+  const err = document.getElementById('prof-error');
+  const suc = document.getElementById('prof-success');
+  clearAlert(err); clearAlert(suc);
+  if (atob(u.password) !== oldPw) return showAlert(err, '✕ Current password is incorrect.', 'error');
+  if (newPw.length < 6) return showAlert(err, '⚠ New password too short (min 6 chars).', 'error');
+  DB.update(currentUser.username, { password: btoa(newPw) });
+  document.getElementById('old-pw').value = ''; document.getElementById('new-pw').value = '';
+  showAlert(suc, '✔ Password changed successfully.', 'success');
+  showToast('✔ Password updated.');
+}
+
+/* ==============================
+   MEMBERS TABLE
+============================== */
+function setFactionFilter(f, btn) {
+  factionFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMembers();
+}
+
+function renderMembers() {
+  const query = (document.getElementById('members-search')?.value || '').toLowerCase();
+  let users = DB.getUsers();
+  if (factionFilter) users = users.filter(u => (u.faction||'').includes(factionFilter));
+  if (query) users = users.filter(u =>
+    u.username.toLowerCase().includes(query) || (u.ic||'').toLowerCase().includes(query) || (u.faction||'').toLowerCase().includes(query)
+  );
+  const tbody = document.getElementById('members-tbody');
+  tbody.innerHTML = '';
+  if (!users.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--mid);font-family:var(--font-cond);letter-spacing:2px;font-size:13px">NO STAFF FOUND</td></tr>`;
+    return;
+  }
+  users.forEach(u => {
+    const roleLabel = u.role === 'admin' ? 'Administrator' : u.role === 'moderateur' ? 'Supervisor' : 'Staff';
+    const roleClass = u.role === 'admin' ? 'chip-admin' : u.role === 'moderateur' ? 'chip-moderateur' : 'chip-membre';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="flex items-center gap-8">
+          <div class="member-avatar-sm">${u.username[0].toUpperCase()}</div>
+          <div>
+            <div class="member-username">${escHtml(u.username)}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:13px;color:var(--text)">${escHtml(u.ic||'—')}</td>
+      <td style="font-size:12px;color:var(--text-light);font-family:var(--font-cond);letter-spacing:.5px">${escHtml(u.faction||'—')}</td>
+      <td><span class="role-chip ${roleClass}">${roleLabel}</span></td>
+      <td style="font-family:var(--font-cond);font-size:12px;color:var(--text-light)">${escHtml(u.discord||'—')}</td>
+      <td style="font-family:var(--font-cond);font-size:12px;color:var(--mid)">${escHtml(u.createdAt||'—')}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ==============================
+   ADMIN
+============================== */
+function renderAdminUsers() {
+  const users = DB.getUsers();
+  document.getElementById('kpi-total').textContent = users.length;
+  const tbody = document.getElementById('admin-users-tbody');
+  tbody.innerHTML = '';
+  users.forEach(u => {
+    const isAdmin = u.username === 'admin';
+    const roleLabel = u.role === 'admin' ? 'Administrator' : u.role === 'moderateur' ? 'Supervisor' : 'Staff';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-weight:700;color:var(--navy)">${escHtml(u.username)}</td>
+      <td>${escHtml(u.ic||'—')}</td>
+      <td style="font-size:12px;color:var(--text-light)">${escHtml(u.faction||'—')}</td>
+      <td><span class="role-chip ${u.role === 'admin' ? 'chip-admin' : u.role === 'moderateur' ? 'chip-moderateur' : 'chip-membre'}">${roleLabel}</span></td>
+      <td style="font-family:var(--font-cond);font-size:12px;color:var(--text-light)">${escHtml(u.discord||'—')}</td>
+      <td>
+        <div class="flex gap-8">
+          <button class="btn-outline" style="padding:6px 12px;font-size:11px" onclick="openRoleModal('${escHtml(u.username)}')">Role</button>
+          ${!isAdmin ? `<button class="btn-danger" style="padding:6px 12px;font-size:11px" onclick="openDeleteModal('${escHtml(u.username)}')">Remove</button>` : ''}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function openRoleModal(username) {
+  document.getElementById('modal-role-username').value = username;
+  const u = DB.getByUsername(username);
+  document.getElementById('modal-role-select').value = u?.role || 'membre';
+  showModal('modal-role');
+}
+function applyRole() {
+  const username = document.getElementById('modal-role-username').value;
+  DB.update(username, { role: document.getElementById('modal-role-select').value });
+  closeModal('modal-role'); renderAdminUsers();
+  showToast('✔ Role updated for ' + username);
+}
+function openDeleteModal(username) {
+  document.getElementById('modal-del-username').value = username;
+  document.getElementById('modal-del-name-display').textContent = username;
+  showModal('modal-delete');
+}
+function confirmDelete() {
+  const username = document.getElementById('modal-del-username').value;
+  DB.delete(username); closeModal('modal-delete'); renderAdminUsers();
+  showToast('Account removed: ' + username, false);
+}
+function showModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+/* ==============================
+   ACCORDION
+============================== */
+function toggleRule(el) { el.classList.toggle('open'); }
+
+/* ==============================
+   UTILS
+============================== */
+function showAlert(el, msg, type) { el.innerHTML = `<span>${msg}</span>`; el.className = `alert alert-${type} show`; }
+function clearAlert(el) { el.innerHTML = ''; el.className = 'alert'; }
+
+let toastTimer;
+function showToast(msg, success = true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (success ? '' : ' err');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 3500);
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
